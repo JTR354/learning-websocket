@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script type="importmap">
+      {
+        "imports": {
+          "vue": "https://unpkg.com/vue@3/dist/vue.esm-browser.js"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div id="root">
+      <input type="text" v-model="state.message" @keyup.enter="submit" />
+      <ul>
+        <li v-for="(it,i) in state.list" :key="i">{{it}}</li>
+      </ul>
+    </div>
+    <script type="module">
+      import { createApp, reactive, onMounted, ref } from "vue";
+      createApp({
+        setup() {
+          const state = reactive({ message: "", list: [] });
+          const ws = new WebSocket("ws://127.0.0.1:3000");
+          ws.addEventListener("open", () => {
+            console.log("open:", ws.readyState);
+          });
+          ws.addEventListener("message", (e) => {
+            const value = e.data.toString();
+            state.list.push(value);
+          });
+          function submit() {
+            if (state.message) {
+              ws.send(state.message);
+              state.list.push(state.message);
+              state.message = "";
+            }
+          }
+          return { state, submit };
+        },
+      }).mount("#root");
+    </script>
+  </body>
+</html>
