@@ -9,11 +9,19 @@
   <body>
     <script>
       const ws = new WebSocket("ws://127.0.0.1:3000");
-      ws.onopen = function () {};
+      ws.onopen = function () {
+        console.log("open:", ws.readyState);
+      };
       ws.onmessage = function (e) {
-        console.log(e);
+        console.log("message:", ws.readyState);
         document.write(e.data);
         ws.send(`it's from browser client => 111`);
+      };
+      ws.onclose = function (e) {
+        console.log("close:", ws.readyState, e);
+      };
+      ws.onerror = function (e) {
+        console.log("error:", ws.readyState, e);
       };
     </script>
   </body>
