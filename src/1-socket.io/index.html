@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script src="/socket.io/socket.io.js"></script>
+  </head>
+  <body>
+    <h1>socket.io</h1>
+    <input type="text" />
+    <script>
+      const socket = io();
+      const input = document.querySelector("input");
+      input.addEventListener("keyup", (e) => {
+        const value = e.target.value;
+        if (e.keyCode === 13 && value) {
+          socket.emit("chatEvent", value);
+          e.target.value = "";
+        }
+      });
+      socket.on("serverMsg", function (msg) {
+        console.log("serverMsg ==>", msg);
+      });
+    </script>
+  </body>
+</html>
