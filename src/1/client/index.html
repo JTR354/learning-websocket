@@ -9,9 +9,12 @@
   <body>
     <script>
       const ws = new WebSocket("ws://127.0.0.1:3000");
-      ws.onmessage(function (e) {
+      ws.onopen = function () {};
+      ws.onmessage = function (e) {
         console.log(e);
-      });
+        document.write(e.data);
+        ws.send(`it's from browser client => 111`);
+      };
     </script>
   </body>
 </html>

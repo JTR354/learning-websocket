@@ -1,7 +1,10 @@
-const WebSocket = require("ws");
+const { WebSocketServer } = require("ws");
 
-const ws = new WebSocket.Server({ port: 3000 });
+const wss = new WebSocketServer({ port: 3000 });
 
-ws.on("connection", () => {
-  console.log("one client connected");
+wss.on("connection", function (ws) {
+  ws.on("message", function (data) {
+    console.log("from client", data.toString());
+  });
+  ws.send(`it's from severs`);
 });
