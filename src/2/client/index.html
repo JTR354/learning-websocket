@@ -89,8 +89,7 @@
 
           function logout() {
             ws.close();
-            state.isLogin = false;
-            state.list = [];
+            location.reload();
           }
           return { state, submit, login, logout };
         },
