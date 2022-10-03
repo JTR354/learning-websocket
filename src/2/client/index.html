@@ -15,32 +15,63 @@
   </head>
   <body>
     <div id="root">
-      <input type="text" v-model="state.message" @keyup.enter="submit" />
-      <ul>
-        <li v-for="(it,i) in state.list" :key="i">{{it}}</li>
-      </ul>
+      <template v-if="!state.isLogin">
+        <div>
+          <label for="">用户名</label>
+          <input type="text" v-model="state.name" />
+        </div>
+        <button @click="login">登录</button>
+      </template>
+      <template v-else>
+        <input type="text" v-model="state.message" @keyup.enter="submit" />
+        <ul>
+          <li v-for="(it,i) in state.list" :key="i">{{it}}</li>
+        </ul>
+      </template>
     </div>
     <script type="module">
       import { createApp, reactive, onMounted, ref } from "vue";
       createApp({
         setup() {
-          const state = reactive({ message: "", list: [] });
+          const state = reactive({
+            message: "",
+            list: [],
+            name: "",
+            isLogin: false,
+          });
           const ws = new WebSocket("ws://127.0.0.1:3000");
           ws.addEventListener("open", () => {
             console.log("open:", ws.readyState);
           });
           ws.addEventListener("message", (e) => {
-            const value = e.data.toString();
+            const { event, message } = parse(e.data.toString());
+            const value =
+              event !== "enter" ? message : `欢迎${message}进入聊天室`;
             state.list.push(value);
           });
           function submit() {
             if (state.message) {
-              ws.send(state.message);
+              send("chat", state.message);
               state.list.push(state.message);
               state.message = "";
             }
           }
-          return { state, submit };
+          function login() {
+            if (state.name.trim()) {
+              state.list.push(`欢迎${state.name}进入聊天室`);
+              state.isLogin = true;
+              send("enter", state.name);
+              state.name = "";
+            }
+          }
+          function send(event, message) {
+            ws.send(JSON.stringify({ event, message }));
+          }
+
+          function parse(body) {
+            return body && JSON.parse(body);
+          }
+          return { state, submit, login };
         },
       }).mount("#root");
     </script>
