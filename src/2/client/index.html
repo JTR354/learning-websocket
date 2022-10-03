@@ -24,12 +24,19 @@
       </template>
       <template v-else>
         <input type="text" v-model="state.message" @keyup.enter="submit" />
+        <button @click="logout">退出</button>
         <ul>
           <li v-for="(it,i) in state.list" :key="i">{{it}}</li>
+          <li>在线人数: {{state.num}}</li>
         </ul>
       </template>
     </div>
     <script type="module">
+      /*
+      2.2 
+        显示发送人名字，人数，退出时提示
+      
+      */
       import { createApp, reactive, onMounted, ref } from "vue";
       createApp({
         setup() {
@@ -38,21 +45,30 @@
             list: [],
             name: "",
             isLogin: false,
+            num: 0,
           });
+
           const ws = new WebSocket("ws://127.0.0.1:3000");
           ws.addEventListener("open", () => {
             console.log("open:", ws.readyState);
           });
           ws.addEventListener("message", (e) => {
-            const { event, message } = parse(e.data.toString());
+            if (!state.isLogin) return;
+            const { event, message, name, num } = parse(e.data.toString());
+            state.num = num;
+            if (name === state.name) return;
             const value =
-              event !== "enter" ? message : `欢迎${message}进入聊天室`;
+              event === "enter"
+                ? `欢迎${message}进入聊天室`
+                : event === "logout"
+                ? `${name}离开了聊天室`
+                : `${name}:${message}`;
             state.list.push(value);
           });
           function submit() {
             if (state.message) {
               send("chat", state.message);
-              state.list.push(state.message);
+              state.list.push(state.name + ":" + state.message);
               state.message = "";
             }
           }
@@ -61,7 +77,6 @@
               state.list.push(`欢迎${state.name}进入聊天室`);
               state.isLogin = true;
               send("enter", state.name);
-              state.name = "";
             }
           }
           function send(event, message) {
@@ -71,7 +86,13 @@
           function parse(body) {
             return body && JSON.parse(body);
           }
-          return { state, submit, login };
+
+          function logout() {
+            ws.close();
+            state.isLogin = false;
+            state.list = [];
+          }
+          return { state, submit, login, logout };
         },
       }).mount("#root");
     </script>
