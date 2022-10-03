@@ -3,19 +3,30 @@ const WebSocket = require("ws");
 const port = 3000;
 const wss = new WebSocket.Server({ port });
 
-let num = 0;
+const group = {};
 wss.on("connection", (ws) => {
   ws.on("message", (msg) => {
     console.log("this is from client" + msg);
-    const { event, message, ...others } = JSON.parse(msg);
+    const { event, message, room, ...others } = JSON.parse(msg);
     if (event === "enter") {
       ws.name = message;
-      num++;
+      ws.room = room;
+      if (group[room] == null) {
+        group[room] = 1;
+      } else {
+        group[room]++;
+      }
     }
     wss.clients.forEach((client) => {
-      if (client.readyState === WebSocket.OPEN) {
+      if (client.readyState === WebSocket.OPEN && client.room === ws.room) {
         client.send(
-          JSON.stringify({ ...others, message, event, num, name: ws.name })
+          JSON.stringify({
+            ...others,
+            message,
+            event,
+            num: group[client.room],
+            name: ws.name,
+          })
         );
       }
     });
@@ -23,10 +34,16 @@ wss.on("connection", (ws) => {
 
   ws.on("close", () => {
     if (!ws.name) return;
-    num--;
+    group[ws.name]--;
     wss.clients.forEach((client) => {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(JSON.stringify({ event: "logout", num, name: ws.name }));
+      if (client.readyState === WebSocket.OPEN && client.room === ws.room) {
+        client.send(
+          JSON.stringify({
+            event: "logout",
+            num: group[ws.name],
+            name: ws.name,
+          })
+        );
       }
     });
   });

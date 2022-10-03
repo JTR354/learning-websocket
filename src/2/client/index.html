@@ -17,14 +17,19 @@
     <div id="root">
       <template v-if="!state.isLogin">
         <div>
-          <label for="">用户名</label>
+          <label for="">昵称：</label>
           <input type="text" v-model="state.name" />
+        </div>
+        <div>
+          <label for="">房间号：</label>
+          <input type="text" v-model="state.room" />
         </div>
         <button @click="login">登录</button>
       </template>
       <template v-else>
         <input type="text" v-model="state.message" @keyup.enter="submit" />
         <button @click="logout">退出</button>
+        <h1>欢迎来到聊天室{{state.room}}!</h1>
         <ul>
           <li v-for="(it,i) in state.list" :key="i">{{it}}</li>
           <li>在线人数: {{state.num}}</li>
@@ -35,7 +40,7 @@
       /*
       2.2 
         显示发送人名字，人数，退出时提示
-      
+      2.3 多人聊天室 
       */
       import { createApp, reactive, onMounted, ref } from "vue";
       createApp({
@@ -46,6 +51,7 @@
             name: "",
             isLogin: false,
             num: 0,
+            room: "",
           });
 
           const ws = new WebSocket("ws://127.0.0.1:3000");
@@ -73,14 +79,14 @@
             }
           }
           function login() {
-            if (state.name.trim()) {
+            if (state.name.trim() && state.room) {
               state.list.push(`欢迎${state.name}进入聊天室`);
               state.isLogin = true;
-              send("enter", state.name);
+              send("enter", state.name, state.room);
             }
           }
-          function send(event, message) {
-            ws.send(JSON.stringify({ event, message }));
+          function send(event, message, room) {
+            ws.send(JSON.stringify({ event, message, room }));
           }
 
           function parse(body) {
