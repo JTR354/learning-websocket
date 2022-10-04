@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script type="importmap">
+      {
+        "imports": {
+          "vue": "https://unpkg.com/vue@3/dist/vue.esm-browser.js"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div id="root">
+      <template v-if="!isLogin">
+        <label>user：<input type="text" v-model="user" /></label>
+        <label>room：<input type="text" v-model="room" /></label>
+        <button @click="login">login</button>
+      </template>
+      <template v-else>
+        <h1>Welcome to the room: <mark>{{room}}</mark></h1>
+
+        <input type="text" v-model="message" @keyup.enter="submit" autofocus />
+        <button @click="logout">logout</button>
+        <ul>
+          <li v-for="(it, i) in list" :key="i">{{it}}</li>
+          <li>{{num}}</li>
+        </ul>
+      </template>
+    </div>
+    <script type="module">
+      /*
+      3.1 auth鉴权 方案
+        html: Websocket Url Message Session/Cookie
+        node: customer headers
+      */
+      import { createApp, ref, onMounted } from "vue";
+      const AUTH = "auth";
+      const LOGIN = "login";
+      const CHAT = "chat";
+      const LOGOUT = "logout";
+
+      createApp({
+        setup() {
+          const list = ref([]);
+          const { send, num } = useWebsocket(list);
+          return {
+            ...useLogin(send),
+            ...useMessage(list, send),
+            list,
+            num,
+          };
+        },
+      }).mount("#root");
+
+      function useMessage(list, send) {
+        const message = ref("");
+        const submit = () => {
+          if (message.value) {
+            send(CHAT, { message: message.value });
+            message.value = "";
+          }
+        };
+
+        return { message, submit };
+      }
+      function useLogin(send) {
+        const user = ref("");
+        const room = ref("");
+        const isLogin = ref(false);
+        const login = () => {
+          if (user.value.trim() && room.value.trim()) {
+            isLogin.value = true;
+            send(LOGIN, { user: user.value, room: room.value });
+          }
+        };
+        const logout = () => {
+          location.reload();
+        };
+        return { user, room, isLogin, login, logout };
+      }
+
+      function useWebsocket(list) {
+        const socket = ref({});
+        const num = ref("");
+        const token =
+          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6Imp0ciIsImlhdCI6MTUxNjIzOTAyMn0.eGlFy592nGB5zIZ6C2L5DnfBdJX61esbRx6_MmV1kCk";
+
+        onMounted(() => {
+          socket.value = new WebSocket("ws://127.0.0.1:3000");
+          const ws = socket.value;
+          ws.addEventListener("open", (e) => {
+            send(AUTH, token);
+          });
+          ws.addEventListener("message", (e) => {
+            const { event, data } = JSON.parse(e.data);
+            if (event === AUTH) {
+              if (data.name.includes("JsonWebTokenError")) {
+                console.error(data);
+                return;
+              }
+            }
+            if (!data.profile) return;
+            const { user } = data.profile;
+            if (event === LOGIN) {
+              list.value.push(`欢迎【${user}】进入聊天室`);
+            } else if (event === CHAT) {
+              list.value.push(`${user}:${data.message}`);
+            } else if (event === LOGOUT) {
+              list.value.push(`${user}离开了聊天室~~`);
+            }
+            num.value = `在线人数==${data.num}==`;
+          });
+        });
+        function send(event, data) {
+          socket.value.send(JSON.stringify({ event, data }));
+        }
+
+        return { send, num };
+      }
+    </script>
+  </body>
+</html>
