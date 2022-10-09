@@ -1,7 +1,10 @@
 const path = require("path");
 const nodeExternals = require("webpack-node-externals");
 const { CleanWebpackPlugin } = require("clean-webpack-plugin");
-module.exports = {
+
+// debugger;
+
+const config = {
   mode: "development",
   // target: "node",
   entry: { server: path.join(__dirname, "./index.js") },
@@ -26,4 +29,12 @@ module.exports = {
   externalsPresets: { node: true }, // webpack 5 --> like `target:node`
 };
 
+console.info(config);
+module.exports = config;
 // @babel/node https://babeljs.io/docs/en/babel-node  直接babel编译 + nodemon实时监控
+
+/**
+ * debugger webpack
+ * chrome://inspect/#devices
+ * node --inspect-brk ./node_modules/.bin/webpack --inline --progress TODO: to resolve
+ */

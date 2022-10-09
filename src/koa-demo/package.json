@@ -6,7 +6,8 @@
   "scripts": {
     "start": "nodemon --exec babel-node index.js",
     "build": "webpack",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "webpack:debugger": "node --inspect-brk ./node_modules/.bin/webpack --inline --progress"
   },
   "keywords": [],
   "author": "",
