@@ -36,13 +36,14 @@
       3.1 auth鉴权 方案
         html: Websocket Url Message Session/Cookie
         node: customer headers
+      3.2 心跳检测
       */
       import { createApp, ref, onMounted } from "vue";
       const AUTH = "auth";
       const LOGIN = "login";
       const CHAT = "chat";
       const LOGOUT = "logout";
-
+      const HEART_BEAT = "heart_beat";
       createApp({
         setup() {
           const list = ref([]);
@@ -95,8 +96,15 @@
           ws.addEventListener("open", (e) => {
             send(AUTH, token);
           });
+          ws.addEventListener("close", (e) => {
+            console.log(e.target.readyState, "close");
+          });
           ws.addEventListener("message", (e) => {
             const { event, data } = JSON.parse(e.data);
+            if (HEART_BEAT === event) {
+              send(HEART_BEAT, { check: "pong" });
+              return;
+            }
             if (event === AUTH) {
               if (data.name.includes("JsonWebTokenError")) {
                 console.error(data);

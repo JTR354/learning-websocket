@@ -8,11 +8,17 @@ const AUTH = "auth";
 const LOGIN = "login";
 const CHAT = "chat";
 const LOGOUT = "logout";
+const HEART_BEAT = "heart_beat";
 
 const group = {};
 wss.on("connection", (ws) => {
+  ws.isActive = true;
   ws.on("message", (body) => {
     const { event, data } = JSON.parse(body);
+    if (event === HEART_BEAT) {
+      ws.isActive = true;
+      return;
+    }
     if (event === AUTH) {
       jwt.verify(data, "secret", (error, decode) => {
         if (error) {
@@ -69,6 +75,17 @@ wss.on("connection", (ws) => {
       });
     }
   });
+
+  setInterval(() => {
+    wss.clients.forEach((client) => {
+      if (!client.isActive) {
+        client.profile && group[client.profile.room]--;
+        return client.terminate();
+      }
+      client.isActive = false;
+      send(HEART_BEAT, { check: "ping" }, client);
+    });
+  }, 1000 * 30);
 
   function send(event, data, socket = ws) {
     socket.send(JSON.stringify({ event, data }));
